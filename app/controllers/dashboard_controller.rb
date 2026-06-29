@@ -82,7 +82,7 @@ class DashboardController < ActionController::Base
       GIT_SHA: GIT_HASH,
       ALLOWED_LOGIN_METHODS: allowed_login_methods,
       ACTIVE_PLATFORM_BANNERS: active_platform_banners
-    }
+    }.then { |config| ChatwootApp.develop? ? config.merge(INSTALLATION_PRICING_PLAN: 'enterprise', IS_DEVELOP: true) : config }
   end
 
   def active_platform_banners

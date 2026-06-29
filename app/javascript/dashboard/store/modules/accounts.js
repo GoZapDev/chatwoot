@@ -49,6 +49,8 @@ export const getters = {
     return diffDays <= TRIAL_PERIOD_DAYS;
   },
   isFeatureEnabledonAccount: $state => (id, featureName) => {
+    if (window.chatwootConfig?.isDevelop === 'true') return true;
+
     const { features = {} } = findRecordById($state, id);
     return features[featureName] || false;
   },

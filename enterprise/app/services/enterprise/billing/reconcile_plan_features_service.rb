@@ -43,6 +43,7 @@ class Enterprise::Billing::ReconcilePlanFeaturesService
   private
 
   def current_plan_features
+    return PREMIUM_PLAN_FEATURES if ChatwootApp.develop?
     return [] if default_plan?
 
     case account.custom_attributes['plan_name']
@@ -54,6 +55,8 @@ class Enterprise::Billing::ReconcilePlanFeaturesService
   end
 
   def default_plan?
+    return false if ChatwootApp.develop?
+
     default_plan_name = cloud_plans.first&.dig('name')
     return false if default_plan_name.blank?
 

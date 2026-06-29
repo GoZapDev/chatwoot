@@ -18,7 +18,7 @@ export function usePolicy() {
     'globalConfig/isACustomBrandedInstance'
   );
 
-  const { isEnterprise, enterprisePlanName } = useConfig();
+  const { isEnterprise, enterprisePlanName, isDevelop } = useConfig();
   const { accountId } = useAccount();
 
   const getUserPermissionsForAccount = () => {
@@ -26,6 +26,7 @@ export function usePolicy() {
   };
 
   const isFeatureFlagEnabled = featureFlag => {
+    if (isDevelop) return true;
     if (!featureFlag) return true;
     return isFeatureEnabled.value(accountId.value, featureFlag);
   };
@@ -56,6 +57,7 @@ export function usePolicy() {
   };
 
   const hasPremiumEnterprise = computed(() => {
+    if (isDevelop) return true;
     if (isEnterprise) return enterprisePlanName !== 'community';
 
     return true;
@@ -71,6 +73,8 @@ export function usePolicy() {
     // This supersedes everything
     if (!checkPermissions(perms)) return false;
     if (!checkInstallationType(installation)) return false;
+
+    if (isDevelop) return true;
 
     if (isACustomBrandedInstance.value) {
       // if this is a custom branded instance, we just use the feature flag as a reference
@@ -105,6 +109,8 @@ export function usePolicy() {
   };
 
   const shouldShowPaywall = featureFlag => {
+    if (isDevelop) return false;
+
     const flag = unref(featureFlag);
     if (!flag) return false;
 

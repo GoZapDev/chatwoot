@@ -37,6 +37,12 @@ export function useConfig() {
   const enterprisePlanName = config.enterprisePlanName;
 
   /**
+   * Indicates whether develop mode is enabled (unlocks all business/premium features).
+   * @type {boolean}
+   */
+  const isDevelop = config.isDevelop === 'true';
+
+  /**
    * Indicates whether inbox webhook events (ENABLE_INBOX_EVENTS) are enabled.
    * @type {boolean}
    */
@@ -48,6 +54,7 @@ export function useConfig() {
     enabledLanguages,
     isEnterprise,
     enterprisePlanName,
+    isDevelop,
     inboxEventsEnabled,
   };
 }

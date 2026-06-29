@@ -11,6 +11,10 @@ module ChatwootApp
     100_000
   end
 
+  def self.develop?
+    ActiveModel::Type::Boolean.new.cast(ENV.fetch('DEVELOP', false))
+  end
+
   def self.enterprise?
     return if ENV.fetch('DISABLE_ENTERPRISE', false)
 
@@ -22,6 +26,8 @@ module ChatwootApp
   end
 
   def self.self_hosted_enterprise?
+    return true if develop? && enterprise?
+
     enterprise? && !chatwoot_cloud? && GlobalConfig.get_value('INSTALLATION_PRICING_PLAN') == 'enterprise'
   end
 

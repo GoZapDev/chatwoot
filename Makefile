@@ -1,6 +1,8 @@
 # Variables
 APP_NAME := chatwoot
 RAILS_ENV ?= development
+PLATFORMS ?= linux/amd64,linux/arm64
+IMAGE := git.adfastltda.com.br/gozap/chatwoot
 
 # Targets
 setup:
@@ -60,7 +62,9 @@ debug:
 debug_worker:
 	overmind connect worker
 
-docker: 
-	docker build -t $(APP_NAME) -f ./docker/Dockerfile .
+## docker: Build and push the multi-arch GoZap Docker image
+docker:
+	@echo "Building GoZap Docker image..."
+	docker buildx build --platform $(PLATFORMS) -f docker/Dockerfile -t $(IMAGE):latest --push .
 
 .PHONY: setup db_create db_migrate db_seed db_reset db console server burn docker run force_run force_run_tunnel debug debug_worker

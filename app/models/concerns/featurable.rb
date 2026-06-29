@@ -42,6 +42,8 @@ module Featurable
   end
 
   def feature_enabled?(name)
+    return true if ChatwootApp.develop?
+
     send("feature_#{name}?")
   end
 
