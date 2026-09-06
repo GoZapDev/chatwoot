@@ -72,6 +72,7 @@ jobs:
             IMAGE_NAME_LOWER="$(printf '%s' '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]')"
 
             docker buildx build \
+              --file docker/Dockerfile \
               --platform linux/amd64,linux/arm64 \
               --push \
               --tag "${IMAGE_NAME_LOWER}:v${{ steps.version.outputs.version }}" \
