@@ -69,8 +69,10 @@ jobs:
           max_attempts: 3
           retry_wait_seconds: 60
           command: |
+            IMAGE_NAME_LOWER="$(printf '%s' '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]')"
+
             docker buildx build \
               --platform linux/amd64,linux/arm64 \
               --push \
-              --tag "${{ env.IMAGE_NAME }}:v${{ steps.version.outputs.version }}" \
+              --tag "${IMAGE_NAME_LOWER}:v${{ steps.version.outputs.version }}" \
               .
