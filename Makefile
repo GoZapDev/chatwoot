@@ -3,6 +3,7 @@ APP_NAME := chatwoot
 RAILS_ENV ?= development
 PLATFORMS ?= linux/amd64,linux/arm64
 IMAGE ?= git.adfastltda.com.br/gozap/chatwoot
+VERSION ?= $(shell tr -d '[:space:]' < VERSION_CW)
 
 # Targets
 setup:
@@ -64,6 +65,6 @@ debug_worker:
 
 docker: ## Build and push the multi-arch Chatwoot Docker image
 	@echo "Building Chatwoot Docker image for $(PLATFORMS)..."
-	docker buildx build --platform $(PLATFORMS) -f docker/Dockerfile -t $(IMAGE):latest --push .
+	docker buildx build --platform $(PLATFORMS) -f docker/Dockerfile -t $(IMAGE):latest -t $(IMAGE):v$(VERSION) --push .
 
 .PHONY: setup db_create db_migrate db_seed db_reset db console server burn docker run force_run force_run_tunnel debug debug_worker
