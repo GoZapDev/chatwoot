@@ -121,5 +121,6 @@ jobs:
         run: |
           docker buildx imagetools create \
             --tag "${{ needs.prepare.outputs.image }}:${{ needs.prepare.outputs.tag }}" \
+            --tag "${{ needs.prepare.outputs.image }}:latest" \
             "${{ needs.prepare.outputs.image }}:${{ needs.prepare.outputs.tag }}-amd64" \
             "${{ needs.prepare.outputs.image }}:${{ needs.prepare.outputs.tag }}-arm64"
