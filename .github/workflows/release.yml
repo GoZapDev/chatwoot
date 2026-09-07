@@ -13,8 +13,11 @@ env:
   IMAGE_NAME: ghcr.io/${{ github.repository }}
 
 jobs:
-  release:
-    runs-on: ubuntu-latest
+  prepare:
+    runs-on: ubuntu-24.04
+    outputs:
+      image: ${{ steps.image.outputs.name }}
+      tag: ${{ steps.version.outputs.tag }}
 
     steps:
       - name: Checkout
@@ -34,6 +37,12 @@ jobs:
           echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
           echo "Versão: v${VERSION}"
 
+      - name: Normalizar nome da imagem
+        id: image
+        run: |
+          IMAGE_NAME_LOWER="$(printf '%s' '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]')"
+          echo "name=${IMAGE_NAME_LOWER}" >> "$GITHUB_OUTPUT"
+
       - name: Criar tag Git
         env:
           TAG: v${{ steps.version.outputs.version }}
@@ -49,6 +58,25 @@ jobs:
           git tag -a "$TAG" -m "Release $TAG"
           git push origin "$TAG"
 
+  build:
+    name: Build ${{ matrix.arch }}
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Login no registry
         uses: docker/login-action@v3
         with:
@@ -56,24 +84,42 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Configurar QEMU
-        uses: docker/setup-qemu-action@v3
-
       - name: Configurar Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build multi-arch e push
+      - name: Build ${{ matrix.arch }} e push
         uses: nick-fields/retry@v3
         with:
           timeout_minutes: 45
           max_attempts: 3
           retry_wait_seconds: 60
           command: |
-            IMAGE_NAME_LOWER="$(printf '%s' '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]')"
-
             docker buildx build \
               --file docker/Dockerfile \
-              --platform linux/amd64,linux/arm64 \
+              --platform '${{ matrix.platform }}' \
               --push \
-              --tag "${IMAGE_NAME_LOWER}:v${{ steps.version.outputs.version }}" \
+              --tag "${{ needs.prepare.outputs.image }}:${{ needs.prepare.outputs.tag }}-${{ matrix.arch }}" \
               .
+
+  manifest:
+    name: Publish multi-arch image
+    needs: [prepare, build]
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Login no registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configurar Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Criar manifesto multi-arch
+        run: |
+          docker buildx imagetools create \
+            --tag "${{ needs.prepare.outputs.image }}:${{ needs.prepare.outputs.tag }}" \
+            "${{ needs.prepare.outputs.image }}:${{ needs.prepare.outputs.tag }}-amd64" \
+            "${{ needs.prepare.outputs.image }}:${{ needs.prepare.outputs.tag }}-arm64"
