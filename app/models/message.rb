@@ -377,7 +377,14 @@ class Message < ApplicationRecord
   end
 
   def dispatch_create_events
-    Rails.configuration.dispatcher.dispatch(MESSAGE_CREATED, Time.zone.now, message: self, performed_by: Current.executed_by)
+    if attachments.present?
+      # Active Storage uploads attached files after the message transaction has
+      # committed. Delay the created event until the blob is available so
+      # consumers do not receive a media URL that still returns 404.
+      Messages::DispatchCreatedEventJob.set(wait: 2.seconds).perform_later(id)
+    else
+      Rails.configuration.dispatcher.dispatch(MESSAGE_CREATED, Time.zone.now, message: self, performed_by: Current.executed_by)
+    end
 
     if valid_first_reply?
       Rails.configuration.dispatcher.dispatch(FIRST_REPLY_CREATED, Time.zone.now, message: self, performed_by: Current.executed_by)
