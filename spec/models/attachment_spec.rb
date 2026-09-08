@@ -297,6 +297,44 @@ RSpec.describe Attachment do
     end
   end
 
+  describe 'push_event_data for audio voice notes' do
+    it 'exposes the voice-note marker for webhook consumers' do
+      attachment = message.attachments.new(
+        account_id: message.account_id,
+        file_type: :audio,
+        meta: { 'is_voice_message' => true }
+      )
+      attachment.file.attach(
+        io: StringIO.new('fake mp3'),
+        filename: 'recording.mp3',
+        content_type: 'audio/mpeg'
+      )
+      attachment.save!
+
+      event_data = attachment.push_event_data
+
+      expect(event_data[:is_voice_message]).to be(true)
+      expect(event_data[:content_type]).to eq('audio/mpeg')
+      expect(event_data[:extension]).to eq('mp3')
+    end
+
+    it 'marks uploaded audio as regular audio when it is not a recording' do
+      attachment = message.attachments.new(
+        account_id: message.account_id,
+        file_type: :audio,
+        meta: {}
+      )
+      attachment.file.attach(
+        io: StringIO.new('music mp3'),
+        filename: 'music.mp3',
+        content_type: 'audio/mpeg'
+      )
+      attachment.save!
+
+      expect(attachment.push_event_data[:is_voice_message]).to be(false)
+    end
+  end
+
   describe 'file size validation' do
     let(:attachment) { message.attachments.new(account_id: message.account_id, file_type: :image) }
 

@@ -110,7 +110,11 @@ class Attachment < ApplicationRecord
       {
         # Keep audio playback inline while avoiding the ActiveStorage proxy path.
         data_url: inline_audio_url,
-        transcribed_text: meta&.[]('transcribed_text') || ''
+        transcribed_text: meta&.[]('transcribed_text') || '',
+        # The dashboard sends this flag for recordings. Keep it in webhook
+        # attachment data so API inbox integrations can preserve voice-note
+        # semantics even when the browser produced MP3 instead of OGG.
+        is_voice_message: meta&.[]('is_voice_message') == true
       }
     )
   end
