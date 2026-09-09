@@ -124,6 +124,23 @@ const editor = wrapper =>
   wrapper.findComponent({ name: 'WootMessageEditor' }).props();
 
 describe('ReplyBox', () => {
+  describe('voice message attachments', () => {
+    it('keeps the voice marker when direct uploads are disabled', () => {
+      const { wrapper } = mountWith({
+        inbox: { channel_type: 'Channel::Api' },
+      });
+
+      wrapper.vm.attachedFiles = [
+        {
+          resource: { file: 'recording.mp3' },
+          isVoiceMessage: true,
+        },
+      ];
+
+      expect(wrapper.vm.getMessagePayload('').isVoiceMessage).toBe(true);
+    });
+  });
+
   describe('Instagram incident restriction', () => {
     it('opens in note mode and restores only the private-note draft', async () => {
       const { wrapper, store } = mountWith({

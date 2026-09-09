@@ -1221,11 +1221,14 @@ export default {
         this.attachedFiles.forEach(attachment => {
           if (this.globalConfig.directUploadsEnabled) {
             messagePayload.files.push(attachment.blobSignedId);
-            if (attachment.isVoiceMessage) {
-              messagePayload.isVoiceMessage = true;
-            }
           } else {
             messagePayload.files.push(attachment.resource.file);
+          }
+          // The API inbox needs this marker in both Active Storage and
+          // multipart upload modes so recorded audio is persisted as a voice
+          // note instead of regular music/audio.
+          if (attachment.isVoiceMessage) {
+            messagePayload.isVoiceMessage = true;
           }
         });
       }
