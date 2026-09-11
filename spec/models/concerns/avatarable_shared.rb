@@ -12,6 +12,10 @@ shared_examples_for 'avatarable' do
     expect(avatarable.respond_to?(:avatar_url)).to be true
   end
 
+  it 'adds an original avatar URL method for lossless integrations' do
+    expect(avatarable.respond_to?(:avatar_original_url)).to be true
+  end
+
   context 'when avatarable has an email attribute' do
     it 'enques job when email is changed on avatarable create' do
       avatarable = build(described_class.to_s.underscore, account: create(:account))

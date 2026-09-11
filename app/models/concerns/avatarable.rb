@@ -18,6 +18,14 @@ module Avatarable
     ''
   end
 
+  # Returns the original ActiveStorage blob URL for integrations that need to
+  # preserve the source image instead of downloading a resized representation.
+  def avatar_original_url
+    return url_for(avatar) if avatar.attached?
+
+    ''
+  end
+
   def fetch_avatar_from_gravatar
     return unless saved_changes.key?(:email)
     return if email.blank?
