@@ -1,6 +1,7 @@
 # Variables
 APP_NAME := chatwoot
 RAILS_ENV ?= development
+CHATWOOT_PORT ?= 3002
 PLATFORMS ?= linux/amd64,linux/arm64
 IMAGE ?= git.adfastltda.com.br/gozap/chatwoot
 VERSION ?= $(shell tr -d '[:space:]' < VERSION_CW)
@@ -36,11 +37,15 @@ burn:
 	bundle && pnpm install
 
 run:
-	@if [ -f ./.overmind.sock ]; then \
+	@if ! command -v overmind >/dev/null 2>&1; then \
+		PORT=$(CHATWOOT_PORT) bundle exec foreman start -f Procfile.dev; \
+	elif [ -f ./.overmind.sock ]; then \
 		echo "Overmind is already running. Use 'make force_run' to start a new instance."; \
 	else \
-		overmind start -f Procfile.dev; \
+		PORT=$(CHATWOOT_PORT) overmind start -f Procfile.dev; \
 	fi
+
+dev: run
 
 force_run:
 	@echo "Cleaning up Overmind processes..."
@@ -67,4 +72,4 @@ docker: ## Build and push the multi-arch Chatwoot Docker image
 	@echo "Building Chatwoot Docker image for $(PLATFORMS)..."
 	docker buildx build --platform $(PLATFORMS) -f docker/Dockerfile -t $(IMAGE):latest -t $(IMAGE):v$(VERSION) --push .
 
-.PHONY: setup db_create db_migrate db_seed db_reset db console server burn docker run force_run force_run_tunnel debug debug_worker
+.PHONY: setup db_create db_migrate db_seed db_reset db console server burn docker run dev force_run force_run_tunnel debug debug_worker
