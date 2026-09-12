@@ -6,6 +6,12 @@ vi.mock('../sdk/IFrameHelper', () => ({
   IFrameHelper: {
     createFrame: vi.fn(),
     sendMessage: vi.fn(),
+    events: { toggleBubble: vi.fn() },
+    getAppFrame: vi.fn(() => ({ src: '' })),
+    getUrl: vi.fn(
+      ({ baseUrl, websiteToken }) =>
+        `${baseUrl}/widget?website_token=${websiteToken}`
+    ),
   },
 }));
 
@@ -55,5 +61,16 @@ describe('$chatwoot.setUser', () => {
       identifier: 'second-user',
       user: secondUser,
     });
+  });
+
+  it('clears the in-memory identity on reset', () => {
+    window.$chatwoot.setUser('first-user', { name: 'First user' });
+    window.$chatwoot.pendingIdentityMessage = { config: {} };
+
+    window.$chatwoot.reset();
+
+    expect(window.$chatwoot.identifier).toBeUndefined();
+    expect(window.$chatwoot.user).toBeUndefined();
+    expect(window.$chatwoot.pendingIdentityMessage).toBeUndefined();
   });
 });

@@ -82,9 +82,11 @@ export const actions = {
         dispatch('conversation/fetchOldConversations', {}, { root: true });
         dispatch('conversationAttributes/getAttributes', {}, { root: true });
       }
+      return true;
     } catch (error) {
       const data = parseErrorData(error);
       sendMessage({ event: 'error', errorType: SET_USER_ERROR, data });
+      return false;
     }
   },
   setCustomAttributes: async (_, customAttributes = {}) => {

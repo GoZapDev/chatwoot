@@ -173,14 +173,31 @@ export const IFrameHelper = {
         enableEmojiPicker: window.$chatwoot.enableEmojiPicker,
         enableEndConversation: window.$chatwoot.enableEndConversation,
       });
+      if (window.$chatwoot.user) {
+        // setUser may run before the iframe is ready. Replay the complete
+        // envelope and keep the widget hidden until the widget confirms that
+        // the contact was identified, preventing a first message from being
+        // created as a guest/ghost conversation.
+        window.$chatwoot.pendingIdentityMessage = message;
+        IFrameHelper.sendMessage('set-user', {
+          identifier: window.$chatwoot.identifier,
+          user: window.$chatwoot.user,
+        });
+        return;
+      }
+
+      IFrameHelper.events.finishLoaded(message);
+    },
+    userIdentified: () => {
+      const message = window.$chatwoot.pendingIdentityMessage;
+      delete window.$chatwoot.pendingIdentityMessage;
+      if (message) IFrameHelper.events.finishLoaded(message);
+    },
+    finishLoaded: message => {
       IFrameHelper.onLoad({
         widgetColor: message.config.channelConfig.widgetColor,
       });
       IFrameHelper.toggleCloseButton();
-
-      if (window.$chatwoot.user) {
-        IFrameHelper.sendMessage('set-user', window.$chatwoot.user);
-      }
 
       window.playAudioAlert = () => {};
 

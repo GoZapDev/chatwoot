@@ -199,6 +199,9 @@ const runSDK = ({ baseUrl, websiteToken }) => {
 
       Cookies.remove('cw_conversation');
       Cookies.remove(getUserCookieName());
+      delete window.$chatwoot.identifier;
+      delete window.$chatwoot.user;
+      delete window.$chatwoot.pendingIdentityMessage;
 
       const iframe = IFrameHelper.getAppFrame();
       iframe.src = IFrameHelper.getUrl({
