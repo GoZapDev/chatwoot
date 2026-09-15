@@ -348,7 +348,9 @@ export const IFrameHelper = {
     closeBubble.style.background = widgetColor;
 
     bubbleHolder.appendChild(chatIcon);
-    bubbleHolder.appendChild(closeBubble);
+    if (!window.$chatwoot.hideCloseBubble) {
+      bubbleHolder.appendChild(closeBubble);
+    }
     onClickChatBubble();
   },
   toggleCloseButton: () => {

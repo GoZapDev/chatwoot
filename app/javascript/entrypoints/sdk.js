@@ -69,6 +69,7 @@ const runSDK = ({ baseUrl, websiteToken }) => {
     launcherTitle: chatwootSettings.launcherTitle || '',
     showPopoutButton: chatwootSettings.showPopoutButton || false,
     showUnreadMessagesDialog: chatwootSettings.showUnreadMessagesDialog ?? true,
+    hideCloseBubble: chatwootSettings.hideCloseBubble ?? false,
     widgetStyle: getWidgetStyle(chatwootSettings.widgetStyle) || 'standard',
     resetTriggered: false,
     darkMode: getDarkMode(chatwootSettings.darkMode),
@@ -123,7 +124,17 @@ const runSDK = ({ baseUrl, websiteToken }) => {
       const userCookieName = getUserCookieName();
       const existingCookieValue = Cookies.get(userCookieName);
       const hashToBeStored = computeHashForUserData({ identifier, user });
+
+      // The cookie only tells us that this identity was already registered in
+      // this browser. It does not prove that the current iframe has received
+      // the identity (for example after a full page reload). Keep the
+      // in-memory identity available so IFrameHelper can replay it on load.
       if (hashToBeStored === existingCookieValue) {
+        window.$chatwoot.identifier = identifier;
+        window.$chatwoot.user = user;
+        if (window.$chatwoot.hasLoaded) {
+          IFrameHelper.sendMessage('set-user', { identifier, user });
+        }
         return;
       }
 

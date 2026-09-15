@@ -1,5 +1,6 @@
 import Cookies from 'js-cookie';
 import { IFrameHelper } from '../sdk/IFrameHelper';
+import { computeHashForUserData } from '../sdk/cookieHelpers';
 import './sdk';
 
 vi.mock('../sdk/IFrameHelper', () => ({
@@ -19,6 +20,7 @@ describe('$chatwoot.setUser', () => {
   beforeEach(() => {
     delete window.$chatwoot;
     window.chatwootSettings = {};
+    IFrameHelper.sendMessage.mockClear();
     vi.spyOn(Cookies, 'get').mockReturnValue(undefined);
     vi.spyOn(Cookies, 'set').mockImplementation(() => {});
 
@@ -63,6 +65,39 @@ describe('$chatwoot.setUser', () => {
     });
   });
 
+  it('replays a cached identity when the current iframe is already loaded', () => {
+    const user = { email: 'known@example.com', name: 'Known user' };
+    window.$chatwoot.hasLoaded = true;
+    Cookies.get.mockReturnValue(
+      computeHashForUserData({ identifier: 'known-user', user })
+    );
+
+    window.$chatwoot.setUser('known-user', user);
+
+    expect(window.$chatwoot.identifier).toBe('known-user');
+    expect(window.$chatwoot.user).toBe(user);
+    expect(IFrameHelper.sendMessage).toHaveBeenLastCalledWith('set-user', {
+      identifier: 'known-user',
+      user,
+    });
+  });
+
+  it('keeps a cached identity in memory for replay when the iframe is loading', () => {
+    const user = { email: 'known@example.com', name: 'Known user' };
+    Cookies.get.mockReturnValue(
+      computeHashForUserData({ identifier: 'known-user', user })
+    );
+
+    window.$chatwoot.setUser('known-user', user);
+
+    expect(window.$chatwoot.identifier).toBe('known-user');
+    expect(window.$chatwoot.user).toBe(user);
+    expect(IFrameHelper.sendMessage).not.toHaveBeenCalledWith('set-user', {
+      identifier: 'known-user',
+      user,
+    });
+  });
+
   it('clears the in-memory identity on reset', () => {
     window.$chatwoot.setUser('first-user', { name: 'First user' });
     window.$chatwoot.pendingIdentityMessage = { config: {} };
@@ -72,5 +107,20 @@ describe('$chatwoot.setUser', () => {
     expect(window.$chatwoot.identifier).toBeUndefined();
     expect(window.$chatwoot.user).toBeUndefined();
     expect(window.$chatwoot.pendingIdentityMessage).toBeUndefined();
+  });
+
+  it('keeps the close bubble enabled by default', () => {
+    expect(window.$chatwoot.hideCloseBubble).toBe(false);
+  });
+
+  it('accepts disabling the close bubble for hosts that close on outside click', () => {
+    delete window.$chatwoot;
+    window.chatwootSettings = { hideCloseBubble: true };
+    window.chatwootSDK.run({
+      baseUrl: 'https://app.chatwoot.com',
+      websiteToken: 'website-token',
+    });
+
+    expect(window.$chatwoot.hideCloseBubble).toBe(true);
   });
 });
