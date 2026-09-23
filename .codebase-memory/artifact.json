@@ -1,0 +1,12 @@
+{
+    "schema_version": 2,
+    "commit": "90caf41c1a2d01e48e5642f79cb2ce5bc677751e",
+    "indexed_at": "2026-09-22T15:43:35Z",
+    "project": "gozap-chatwoot",
+    "nodes": 43940,
+    "edges": 111946,
+    "original_size": 79429632,
+    "compressed_size": 7625948,
+    "compression_level": 9,
+    "reconcile_basis": "git-clean-head"
+}
