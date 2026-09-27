@@ -49,6 +49,8 @@ RSpec.describe Concerns::Agentable do
         instructions: instance_of(Proc),
         tools: [],
         model: Llm::Models.default_model_for('assistant'),
+        provider: Llm::Models.provider_for(Llm::Models.default_model_for('assistant')),
+        assume_model_exists: false,
         temperature: 0.8,
         response_schema: Captain::ResponseSchema
       )
@@ -71,6 +73,21 @@ RSpec.describe Concerns::Agentable do
 
       expect(Agents::Agent).to receive(:new).with(
         hash_including(temperature: 0.5)
+      )
+
+      dummy_instance.agent
+    end
+
+    it 'skips model registry validation for a custom installation model' do
+      create(:installation_config, name: 'CAPTAIN_OPEN_AI_MODEL', value: 'Atria-Dawn-Preview')
+      account.enable_features!('captain_integration_v2')
+
+      expect(Agents::Agent).to receive(:new).with(
+        hash_including(
+          model: 'Atria-Dawn-Preview',
+          provider: 'openai',
+          assume_model_exists: true
+        )
       )
 
       dummy_instance.agent
@@ -188,8 +205,15 @@ RSpec.describe Concerns::Agentable do
       expect(dummy_instance.send(:agent_model)).to eq('gpt-4.1-nano')
     end
 
-    it 'returns the Captain V2 default when Captain V2 is enabled' do
+    it 'prefers the installation model over the Captain V2 default when Captain V2 is enabled' do
       create(:installation_config, name: 'CAPTAIN_OPEN_AI_MODEL', value: 'gpt-4.1-nano')
+      account.enable_features!('captain_integration_v2')
+
+      expect(dummy_instance.send(:agent_model)).to eq('gpt-4.1-nano')
+      expect(account.reload.captain_models).to be_nil
+    end
+
+    it 'returns the Captain V2 default when Captain V2 is enabled and no installation model is set' do
       account.enable_features!('captain_integration_v2')
 
       expect(dummy_instance.send(:agent_model)).to eq('gpt-5.2')

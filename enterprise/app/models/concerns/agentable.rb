@@ -4,11 +4,17 @@ module Concerns::Agentable
   DEFAULT_TEMPERATURE = 0.5
 
   def agent
+    route = agent_route
     Agents::Agent.new(
       name: agent_name,
       instructions: ->(context) { agent_instructions(context) },
       tools: agent_tools,
-      model: agent_model,
+      model: route[:model],
+      provider: route[:provider],
+      # Custom installation-configured models (e.g. a self-hosted OpenAI-compatible
+      # endpoint) aren't part of RubyLLM's built-in model registry, so validation
+      # must be skipped for them or every request would fail with ModelNotFoundError.
+      assume_model_exists: route[:source] == :installation_override,
       temperature: temperature.presence&.to_f || DEFAULT_TEMPERATURE,
       response_schema: agent_response_schema
     )
@@ -33,13 +39,23 @@ module Concerns::Agentable
   end
 
   def agent_model
-    route = Llm::FeatureRouter.resolve(feature: 'assistant', account: account)
-    return route[:model] if route[:source] == :account_override || account&.feature_enabled?('captain_integration_v2')
-
-    installation_model.presence || route[:model]
+    agent_route[:model]
   end
 
   private
+
+  def agent_route
+    @agent_route ||= begin
+      route = Llm::FeatureRouter.resolve(feature: 'assistant', account: account)
+      legacy_model = installation_model.presence
+
+      if route[:source] == :account_override || account&.feature_enabled?('captain_integration_v2') || legacy_model.blank?
+        route
+      else
+        route.merge(model: legacy_model, provider: 'openai', source: :installation_override)
+      end
+    end
+  end
 
   def agent_name
     raise NotImplementedError, "#{self.class} must implement agent_name"
