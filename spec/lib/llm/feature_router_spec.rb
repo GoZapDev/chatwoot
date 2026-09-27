@@ -101,6 +101,21 @@ RSpec.describe Llm::FeatureRouter do
       expect(account.reload.captain_models).to be_nil
     end
 
+    it 'uses the installation model for the assistant feature on self-hosted Enterprise' do
+      allow(ChatwootApp).to receive(:self_hosted_enterprise?).and_return(true)
+      InstallationConfig.find_or_initialize_by(name: 'CAPTAIN_OPEN_AI_MODEL').update!(value: 'Atria-Dawn-Preview')
+      account.enable_features!('captain_integration_v2')
+
+      resolved = described_class.resolve(feature: 'assistant', account: account)
+
+      expect(resolved).to eq(
+        feature: 'assistant',
+        provider: 'openai',
+        model: 'Atria-Dawn-Preview',
+        source: :installation_override
+      )
+    end
+
     it 'keeps account model overrides ahead of the Captain V2 default' do
       account.enable_features!('captain_integration_v2')
       account.update!(captain_models: { 'assistant' => 'gpt-5.1' })
